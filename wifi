@@ -1,0 +1,320 @@
+#!/bin/sh
+
+
+#############################
+#   Entry point functuons   #
+#############################
+
+prefix_list="$prefix_list $DMROOT.WiFi."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_WiFi"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_WiFi"
+
+entry_execute_method_root_WiFi() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.WiFi."|"$DMROOT.WiFi.Radio."*)
+		common_execute_method_obj "$DMROOT.WiFi." "0"
+		common_execute_method_obj "$DMROOT.WiFi.Radio." "1" "" "" "WiFi_device_browse_instances $1"
+		return 0
+		;;
+		""|"$DMROOT."|"$DMROOT.WiFi."|"$DMROOT.WiFi.SSID."*)
+		common_execute_method_obj "$DMROOT.WiFi." "0"
+		common_execute_method_obj "$DMROOT.WiFi.SSID." "1" "" "" "WiFi_device_browse_instances_SSID $1"
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+sub_entry_WiFi_Radio(){
+	local j="$2"
+	local i="$(($j+1))"
+	local n="$3"
+	local inface=`WiFi_get_iface $j`
+	common_execute_method_obj "$DMROOT.WiFi.Radio.$i." "1"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.Enable" "1" "WiFi_iface_get_WiFi_enable $j" "WiFi_iface_set_WiFi_enable $i" "xsd:boolean"
+
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.statut" "0" "get_statut_WiFi $j"  "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.Name" "0" "get_Name_WiFi $j" "1" "xsd:string­"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.Upstream" "0" "get_Upstream_WiFi $j" "1" "xsd:boolean"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.MaxBitRate" "0" "get_MaxBitRate_WiFi $j" "1" "xsd:unsignedInt"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.LastChange" "0" "get_LastChange_WiFi $j" "1" "xsd:unsignedInt"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.SupportedFrequencyBands" "0" "get_Supported_frequance_WiFi $j" "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.PossibleChannels" "0" "get_Possible_Channels_WiFi $j" "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.ChannelsInUse" "0" "get_ChannelsInUse_WiFi $j" "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.SupportedStandards" "0" "get_SupportedStandards_WiFi $j" "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.Channel" "1" "get_Channel_WiFi $j"  "set_Channel_WiFi $j" "xsd:unsignedInt­"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.OperatingFrequencyBand" "1" "get_Operating_frequance_WiFi $j" "set_Operating_frequance_WiFi $j"  "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.Radio.$i.OperatingChannelBandwidth" "1" "get_OperatingChannelBandwidth_WiFi $j" "set_OperatingChannelBandwidth_WiFi $j" "xsd:string"				
+}
+
+sub_entry_WiFi_SSID(){
+	local j="$2"
+	local i="$(($j+1))"
+	local n="$3"
+	local inface=`WiFi_get_iface $j`
+	common_execute_method_obj "$DMROOT.WiFi.SSID.$i." "1"
+	common_execute_method_param  "$DMROOT.WiFi.SSID.$i.Name" "0" "get_Name_ssid $j"  "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.SSID.$i.MACAddress" "0" "get_MACAddress_ssid $j"  "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.WiFi.SSID.$i.SSID" "1" "" "set_ssid $j" "xsd:string"
+}
+
+#######################################
+#     Data model browse instances     #
+#######################################
+
+WiFi_device_browse_instances(){
+	local n=`WiFi_Radio_get_nbr_Radio`
+	local j=0
+	while test $j != $n 
+	do
+		sub_entry_WiFi_Radio  "$1" "$j" "$n"
+		j=$(($j+1))
+	done
+}
+WiFi_device_browse_instances_SSID(){
+	local n=`WiFi_Radio_get_nbr_Radio`
+	local j=0
+	while test $j != $n 
+	do
+		sub_entry_WiFi_SSID  "$1" "$j" "$n"
+		j=$(($j+1))
+	done
+}
+
+WiFiv4Address_device_browse_instances(){
+	local j=$1
+	local n=`WiFiv4_Radio_get_nbr_Radio $j`
+	local i=1
+	while test $i != $(($n+1)) 
+	do
+		sub_entry_WiFiv4_Radio  "$1" "$i" "$j"
+		i=$(($i+1))
+	done
+}
+
+WiFiv6Address_device_browse_instances(){
+	local j=$1
+	local n=`WiFiv6_Radio_get_nbr_Radio $j`
+	local i=1
+	while test $i != $(($n+1)) 
+	do
+		sub_entry_WiFiv6_Radio  "$1" "$i" "$j"
+		i=$(($i+1))
+	done
+}
+
+#######################################
+#   Data model parameters functions   #
+#######################################
+
+#############################
+#        set wifi enable    #
+#############################
+
+WiFi_iface_set_WiFi_enable(){
+	$UCI_SET wireless.radio$(($1-1)).disabled=$2
+	common_delay_service_restart_in_apply_service "network" "1"
+	return 0
+}
+
+#############################
+# get namber  of radio wifi # 
+#############################
+
+WiFi_Radio_get_nbr_Radio(){
+	local max=` cat /etc/config/wireless | grep "config wifi-device" | cut -d "'" -f 2 | wc -l`
+	echo $max
+}
+
+
+####################################
+#  get enable interfaces wifi      #
+####################################
+
+WiFi_iface_get_WiFi_enable(){
+	$UCI_GET wireless.radio$1.disabled
+}
+
+################################
+#   get statut of wifi up/down #
+################################
+
+get_statut_WiFi(){
+	local stut=`$UCI_GET wireless.radio$1.disabled`
+	if [ "$stut" -eq "0" ] ; then 
+		echo "down"
+	else 
+		echo "up"
+	fi
+}
+
+#############################
+#   get name of radio wifi  #
+#############################
+
+get_Name_WiFi(){
+	$UCI_GET wireless.@wifi-iface[$1].device
+}
+
+#######################################
+#get Upstream true < WAN /false < LAN #
+#######################################
+
+get_Upstream_WiFi(){
+	local j=$(($1+1))
+	local a=`grep -n "config wifi-device" /etc/config/wireless | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n "config wifi-device" /etc/config/wireless | cut -d : -f 1 | head -$(($j+1)) | tail -1`
+	if [ "$a" -eq "$b" ] ; then
+		b=`cat /etc/config/wireless | wc -l`
+	fi
+	local d=$(($b-1))
+	local f=$(($b-$a))
+	if [ "$type" -eq "lan" ] ; then
+		echo "false"
+	elif [ "$type" -eq "wan" ] ; then
+		echo "true"
+	else
+		echo "true"
+	fi
+}
+
+#############################
+#   get Max Bit Rate        #
+#############################
+
+get_MaxBitRate_WiFi(){
+	local radio=`get_Name_WiFi $1`
+	local bit="`dmesg |grep "$radio" | grep "Link is Up"`" 
+	echo ${bit#*"Link is Up - "} | cut -d "/" -f 1
+
+}
+
+###############################################
+# get time in seconds since the radio entered #
+###############################################
+
+get_LastChange_WiFi(){
+	local p=`pwd`
+	local path=`$UCI_GET wireless.radio$1.path`
+	cd /sys/devices/
+	cd $path
+	cd net
+	cat `find -name 'carrier_changes'`
+	cd $p
+}
+
+#############################
+# get current radio channel #
+#############################
+
+get_Channel_WiFi(){
+	$UCI_GET wireless.radio$1.channel
+}
+
+#############################
+#       set channel         #
+#############################
+
+set_Channel_WiFi(){
+	$UCI_SET wireless.radio$(($1-1)).channel="$2"
+	common_delay_service_restart_in_apply_service "network" "1"
+	return 0
+}
+
+#############################
+#   get Supported Standards #
+#############################
+
+get_SupportedStandards_WiFi(){
+	$UCI_GET wireless.radio$1.hwmode | sed 's/[0-9]//g'
+}
+
+#############################
+#  set Possible Channels    #
+#############################
+
+get_Possible_Channels_WiFi(){
+	local p=`pwd`
+	local path=`$UCI_GET wireless.radio$1.path`
+	cd /sys/devices/
+	cd $path
+	cat local_cpulist
+	cd $p
+	common_delay_service_restart_in_apply_service "network" "1"
+}
+
+
+#############################
+#      get Name SSID        #
+#############################
+
+get_Name_ssid(){
+	$UCI_GET wireless.@wifi-iface[$1].ssid
+}
+
+#############################
+#     get MAC address SSID  #
+#############################
+
+get_MACAddress_ssid(){
+	local p=`pwd`
+	local path=`$UCI_GET wireless.radio$1.path`
+	cd /sys/devices/
+	cd $path
+	cd ieee80211
+	cat `find -name 'macaddress'`
+	cd $p
+}
+
+########################################
+# get Operating Channel Bandwidth WiFi #
+########################################
+
+get_OperatingChannelBandwidth_WiFi(){
+	local typ=`$UCI_GET wireless.radio0.type   | cut -d "8" -f 2`
+	case typ in 
+		0211n) 
+	echo "40MHz"
+	;;
+		0211ac)
+	echo "80MHz"
+	;;
+	*)
+		echo "Auto"
+	;;
+	esac
+}
+
+#############################
+#      set Name SSID        #
+#############################
+
+set_ssid(){
+	uci set wireless.@wifi-iface[$1].ssid="$2"
+	common_delay_service_restart_in_apply_service "network" "1"
+	return 0
+}
+
+set_OperatingChannelBandwidth_WiFi(){
+
+
+ 	return 0
+}
+
+################################
+# get Operating frequance WiFi #
+################################
+
+get_Operating_frequance_WiFi(){
+	echo "freq $1"
+}
+
+###############################
+#set Operating frequance WiFi #
+###############################
+
+set_Operating_frequance_WiFi(){
+
+
+	return 0
+}
+

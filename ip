@@ -1,0 +1,355 @@
+#!/bin/sh
+
+
+#############################
+#   Entry point functuons   #
+##########################
+
+prefix_list="$prefix_list $DMROOT.IP."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_IP"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_IP"
+
+entry_execute_method_root_IP() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.IP."|"$DMROOT.IP.Interface."*)
+		common_execute_method_obj "$DMROOT.IP." "0"
+		common_execute_method_obj "$DMROOT.IP.Interface." "1" "" "" "IP_device_browse_instances $1"
+
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+sub_entry_IP_Interface(){
+	local j="$2"
+	local n="$3"
+	local inface=`IP_get_iface $j `
+	common_execute_method_obj "$DMROOT.IP.Interface.$j." "1"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.Enable" "1" "IP_iface_get_IP_enable $inface" "IP_iface_set_IP_enable $inface" "xsd:boolean"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.Name" "0" "IP_get_iface $j" "1" "xsd:string"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.MaxMTUSize " "0" "IP_iface_get_IP_MaxMTUSize $inface"  "xsd:unsignedInt­"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.Type" "0" "IP_iface_get_IP_Type $inface" "1" "xsd:string"
+	common_execute_method_obj "$DMROOT.IP.Interface.$j.IPv4Address." "1" "" "" "IPv4Address_device_browse_instances $j"
+	common_execute_method_obj "$DMROOT.IP.Interface.$j.IPv6Address." "1" "" "" "IPv6Address_device_browse_instances $j"	
+	
+	common_execute_method_obj "$DMROOT.LANDevice.1.WLANConfiguration." "1" "add_IP_iface" "" "IP_browse_instances_iface $1"		
+}
+
+sub_entry_IPv4_Interface(){
+	local i="$2"
+	local j="$3"
+	local inface=`IP_get_iface $j`
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.$i.IPAddress" "1" "IPv4Address_iface_get_IP_adress $j $i" "IPv4Address_iface_set_IP_adress network.$inface.ipaddr" "xsd:string"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv4Address.$i.AddressingType" "0" "IPv4Address_iface_get_Type_adress $j $i" "1" "xsd:string"
+}
+
+sub_entry_IPv6_Interface(){
+	local i="$2"
+	local j="$3"
+	local inface=`IP_get_iface $j`
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv6Address.$i.IPAddress" "1" "IPv6Address_iface_get_IP_adress $j $i" "IPv6Address_iface_set_IP_adress $inface" "xsd:string"
+	common_execute_method_param  "$DMROOT.IP.Interface.$j.IPv6Address.$i.Origin" "0" "IPv6Address_iface_get_Type_adress $j $i" "1" "xsd:string"
+}
+
+#######################################
+#     Data model browse instances     #
+#######################################
+
+IP_device_browse_instances(){
+	local n=`IP_Interface_get_nbr_interface`
+	local j=1
+	while test $j != $n 
+	do
+		sub_entry_IP_Interface  "$1" "$j" "$n"
+		j=$(($j+1))
+	done
+}
+
+IPv4Address_device_browse_instances(){
+	local j=$1
+	local n=`IPv4_Interface_get_nbr_interface $j`
+	local i=1
+	while test $i != $(($n+1)) 
+	do
+		sub_entry_IPv4_Interface  "$1" "$i" "$j"
+		i=$(($i+1))
+	done
+}
+
+IPv6Address_device_browse_instances(){
+	local j=$1
+	local n=`IPv6_Interface_get_nbr_interface $j`
+	local i=1
+	while test $i != $(($n+1)) 
+	do
+		sub_entry_IPv6_Interface  "$1" "$i" "$j"
+		i=$(($i+1))
+	done
+}
+
+#######################################
+#   Data model parameters functions   #
+#######################################
+
+IP_iface_set_IP_enable(){
+
+	return 0
+}
+
+#######################################
+#   number of all interfaces          #
+#######################################
+		
+IP_Interface_get_max_interface(){
+	local max=`cat /etc/config/network |grep -i "interface" | wc -l`
+	echo $(($max+1))
+}
+
+#################################################################
+#    number of interfaces that address or proto "dhcp / dhcpv6" #
+#################################################################
+
+IP_Interface_get_nbr_interface(){
+	local n=`IP_Interface_get_max_interface`
+	local j=1
+	while test $j != $n ; do
+		local i=$(($j+1))
+		local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+		local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+			if [ "$a" -eq "$b" ] ; then
+				b=`wc -l /etc/config/network | cut -d " " -f 1`
+			fi
+		local d=$(($b-1))
+		local f=$(($b-$a))
+		local IP=`head -$d /etc/config/network | tail -$f | grep -i "ipaddr" | cut -d " " -f 3`
+		local proto=`head -$d /etc/config/network | tail -$f | grep -i "proto" | cut -d " " -f 3`
+		local res="$IP$proto"
+			if [ "$res" -eq "" ] ; then 
+				n=$(($n-1))
+			fi
+				j=$(($j+1))
+			done
+	echo $n
+}
+
+####################################
+#   number of IPv4 interfaces      #
+####################################
+		
+IPv4_Interface_get_nbr_interface(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a+1))
+	local n_ip=`head -$d /etc/config/network | tail -$f | grep -i "ipaddr" |wc -l`
+		if [ "$n_ip" -eq "0" ] ; then
+			n_ip=`head -$d /etc/config/network | tail -$f | grep -i "option proto 'dhcpv' " |wc -l`
+		fi
+	echo "$n_ip"
+}
+
+####################################
+#    number of IPv6 interfaces     #
+####################################
+		
+IPv6_Interface_get_nbr_interface(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a+1))
+	local n_ip=`head -$d /etc/config/network | tail -$f | grep -i "ip6addr" |wc -l`
+		if [ "$n_ip" -eq "0" ] ; then
+			n_ip=`head -$d /etc/config/network | tail -$f | grep -i 'dhcpv6' |wc -l`
+		fi
+	echo "$n_ip"
+}
+
+####################################
+#  get name of the interfaces      #
+####################################
+		
+IP_get_iface(){
+	local interface=`cat /etc/config/network |grep -i "interface" | cut -d " " -f 3 | head -$1 | tail -1|tr -d "'"`
+	echo $interface
+}
+
+####################################
+#  get enable interfaces           #
+####################################
+
+IP_iface_get_IP_enable(){
+	echo "1"
+}
+
+
+####################################
+#  get interfaces Max MTU Size     #
+####################################
+		
+IP_iface_get_IP_MaxMTUSize(){
+	local MTU=`ifconfig $1 | grep -Eo "MTU:[0-9]+"`
+	echo $MTU
+}
+
+##############################################
+#  all types of interfaces: loopback / Normal#
+##############################################
+		
+IP_iface_get_IP_Type(){
+	if [ "$1" == "loopback" ]; then
+		echo "Loopback"
+	else
+		echo "Normal"
+	fi
+}
+
+####################################
+#   get IPv4 address interfaces    #
+####################################
+		
+IPv4Address_iface_get_IP_adress(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a))
+	local add="`head -$d /etc/config/network | tail -$f | grep -i "ipaddr" | cut -d " " -f 3|head -$2 | tail -1 | tr -d "'"`"
+		if [$add -eq ""]
+		then 
+			add=0.0.0.0
+		fi
+	echo "$add"
+}
+
+IPv4Address_iface_set_IP_adress(){
+	local cfg="$1"
+	local val="$2"
+	$UCI_SET $cfg="$val"
+	common_delay_service_restart_in_apply_service "network" "1"
+	return 0
+}
+
+####################################
+#   get IPv6 address interfaces    #
+####################################
+		
+IPv6Address_iface_get_IP_adress(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a))
+	local add="`head -$d /etc/config/network | tail -$f | grep -i "ip6addr" | cut -d "'" -f 2 |head -$2 | tail -1`"
+		if [$add -eq ""]
+		then 
+			add="0::0:0:0:0"
+		fi
+	echo "$add"
+}
+IPv6Address_iface_set_IP_adress(){
+	local cfg="$1"
+	local val="$2"
+	$UCI_SET $cfg="$val"
+
+	return 0
+}
+
+####################################
+#   get Type IPv4 interfaces       #
+####################################
+		
+IPv4Address_iface_get_Type_adress(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a))
+	local type="`head -$d /etc/config/network | tail -$f | grep -i "proto" | cut -d " " -f 3|head -$2 | tail -1 | tr -d "'" `"
+		if [ "$type" -eq "" ] ; then 
+			type="Static"
+		fi
+	echo "$type"
+}
+
+####################################
+#   get Type IPv6 interfaces      #
+####################################
+
+IPv6Address_iface_get_Type_adress(){
+	local j=$1
+	local i=$(($j+1))
+	local a=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+	local b=`grep -n 'config interface ' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+		if [ "$a" -eq "$b" ] ; then
+			b=`wc -l /etc/config/network | cut -d " " -f 1`
+		fi
+	local d=$(($b-1))
+	local f=$(($b-$a))
+	local type="`head -$d /etc/config/network | tail -$f | grep -i "proto" | cut -d " " -f 3|head -$2 | tail -1 | tr -d "'"`"
+		if [ "$type" != "dhcpv6" ] ; then 
+			type="Static"
+		fi
+	echo "$type"
+}
+
+
+
+add_IP_iface() {
+	local instance=`IP_Interface_get_nbr_interface`
+	local iface=`$UCI_ADD network iface`
+	$UCI_SET wireless.$wifi_iface.device=wl0
+	$UCI_SET wireless.$wifi_iface.proto=none
+	$UCI_SET wireless.$wifi_iface.netmask=255.0.0.0
+	$UCI_SET wireless.$wifi_iface.ipaddr=0.0.0.0
+	$UCI_SET wireless.$wifi_iface.dns=192.168.1.1
+	$UCI_SET wireless.$wifi_iface.gateway=192.168.0.0
+	$UCI_SET wireless.$wifi_iface.auto=0
+	$UCI_SET wireless.$wifi_iface.instance=$((++instance))
+	$UCI_COMMIT
+	echo $instance
+}
+
+
+IP_browse_instances_iface() {
+	local iface ifaces=`$UCI_SHOW wireless | grep "network=wifi-iface" | awk -F'[.=]' '{print $2}'` 
+	for iface in $ifaces; do
+		local j=`lan_device_update_instance $iface`
+		sub_entry_landevice_wlanconfig "$1" "$j" "$iface"
+	done
+	return 0
+}
+
+lan_device_update_instance() {
+	local iface="$1"
+	local instance=`$UCI_GET network.$iface.instance`
+	if [ -z "$instance" ]; then
+		instance=`IP_Interface_get_nbr_interface`
+		$UCI_SET network.$iface.instance=$((++instance))
+		$UCI_COMMIT
+	fi
+	echo $instance
+}
+
+

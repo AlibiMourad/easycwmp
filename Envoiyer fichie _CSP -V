@@ -1,0 +1,74 @@
+
+scp -v /home/alibi/wifi root@192.168.0.201:/usr/share/easycwmp/functions/
+ 
+scp -v /home/alibi/device_info root@192.168.0.201:/usr/share/easycwmp/functions/
+
+scp -v /home/alibi/ethernet root@192.168.0.201:/usr/share/easycwmp/functions
+
+scp -v /home/alibi/easycwmp root@192.168.0.201:/usr/sbin/
+
+ scp -v /home/alibi/ProcessStatus_Process root@192.168.0.201:/usr/share/easycwmp/functions/
+
+scp -v /home/alibi/ip root@192.168.0.201:/usr/share/easycwmp/functions
+
+scp -v /home/alibi/network root@192.168.0.201:/etc/config/network 
+
+head -n 2| /proc/meminfo |  tail -n 1 | tr -d " "
+
+ 
+ common_execute_method_obj "$DMROOT.DeviceInfo.ProcessStatus.ProcessNumberOfEntries" "0" "device_info_get_ProcessNumberOfEntries"
+
+ps |  tail -n 1
+
+cat /proc/sys/net/ipv4/ip_forward
+
+"ip_iface_get_ip_enable $inface "
+
+
+Ip_get_IPv4Capable () {
+if ifconfig eth0 |grep "inet addr:"
+
+}
+
+
+Ip_set_IPv4Enable(){
+local ethernet=`ifconfig | cut -d" " -f 1 | head -n 1| tail -n 1`
+case "$2" in 
+up)
+ ifconfig $ethernet up ;;
+down)
+ifconfig $ethernet down ;;
+
+}
+
+
+case_param "$j" belongto "$DMROOT.Ip.Interface" "Ip_add_iface" "1" "$j." &&{
+------------------------------------------------------------------------------------
+local j=$1
+local i=$(($j+1))
+local a=`grep -n 'config' /etc/config/network | cut -d : -f 1 | head -$j | tail -1`
+local b=`grep -n 'config' /etc/config/network | cut -d : -f 1 | head -$i | tail -1`
+if [ $a -eq $b ]
+then
+b=`wc -l /etc/config/network | cut -d " " -f 1`
+fi
+n_ip=`head -$d /etc/config/network | tail -$f | grep -i "IPaddr"  | wc -l`
+n_proto=`head -$d /etc/config/network | tail -$f | grep -i "proto" | wc -l`
+echo "$(($n_ip+$n_proto))"
+-----------------------------------------------------------------------------------
+
+
+sudo ifconfig enp2s0:2 192.168.0.87
+
+
+ssh root@192.168.0.201
+
+valeur_1 )
+echo"Half"  ;;
+valeur_2 )
+echo"Full" ;;
+* )
+echo"Auto" ;;
+esac
+echo "DEplex $1"
+

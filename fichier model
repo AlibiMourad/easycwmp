@@ -1,0 +1,65 @@
+#!/bin/sh
+
+
+#############################
+#   Entry point functuons   #
+#############################
+
+prefix_list="$prefix_list $DMROOT.PID."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_PID"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_PID"
+entry_execute_method_root_PID() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.PID."|"$DMROOT.PID.Process."*)
+		common_execute_method_obj "$DMROOT.PID." "0"
+		common_execute_method_obj "$DMROOT.PID.Process." "0" 
+		common_execute_method_obj "$DMROOT.PID.Process." "0" "" "" "PID_device_browse_instances $1"
+
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+sub_entry_PID_Process(){
+local j="$2"
+local n="$3"
+local inface=`cat /etc/config/network | grep config | head -$j | tail -1 | cut -d " " -f 3 | tr -d "'"`
+
+	common_execute_method_obj "$DMROOT.PID.Process.$j." "0"
+	common_execute_method_param  "$DMROOT.PID.Process.$j.PID " "0" "Process_PID $j" "1" "xsd:unsignedInt"
+	
+							
+}
+
+#######################################
+#     Data model browse instances     #
+#######################################
+PID_device_browse_instances(){
+local n=`PID_Process_get_max_Process`
+local j=1
+while test $j != $n 
+do
+  sub_entry_PID_Process  "$1" "$j" "$n"
+j=$(($j+1))
+done
+
+}
+
+#######################################
+#   Data model parameters functions   #
+#######################################
+
+
+PID_Process_get_max_Process(){
+local iface="$1"
+local max=`top -n 1| grep -i root |wc -l`
+echo $max
+}
+
+
+Process_PID(){
+local pid=`top -n 1| grep -v "   0%   0% " | grep -i root |head -1 | tail -1 | cut -d " " -f 2`
+	echo $pid
+}
+
+

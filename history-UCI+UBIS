@@ -1,0 +1,86 @@
+   0 cat /etc/exports
+   1 cd /etc/
+   2 ls
+   3 cat dnsmasq.conf 
+   4 cd init.d/
+   5 l
+   6 ls
+   7 cat /etc/config/system
+   8 uci
+   9 uci show
+  10 uci show | grep -i "fre"
+  11 uci show | grep -i "time"
+  12 . /lib/functions/network.sh; network_get_ipaddr ip wan; echo $ip
+  13 . /lib/functions/network.sh; 
+  14 network_get_ipaddr ip wan
+  15 cat lib/functions/network.sh; 
+  16 cat lib/functions/network.sh
+  17 cat /lib/functions/network.sh
+  18 . /lib/functions/network.sh; network_get_ipaddr ip wan; echo $ipnetwork_get_ipaddrs_all
+  19 network_get_ipaddrs_all
+  20 echo $ip
+  21   uci set wireless.radio0.htmode=HT40+  # or: HT40- if using channel 11
+  22   uci commit wireless; wifi
+  23 wifi up wlan2
+  24 wifi up lan
+  25 wifi 
+  26 wifi radio0 up
+  27 wifi up radio0 
+  28 wifi down radio0 
+  29 wifi up radio0 
+  30 wifi up radio1
+  31 wifi up 
+  32 uci set wireless.@wifi-device[0].disabled=0; uci commit wireless; wifi
+  33 uci set wireless.@wifi-device[1].disabled=0; uci commit wireless; wifi
+  34 uci set wireless.@wifi-device[0].disabled=1; uci commit wireless; wifi
+  35 uci set wireless.@wifi-device[1].disabled=0; uci commit wireless; wifi
+  36 uci set wireless.@wifi-device[1].disabled=0; uci commit wireless
+  37 uci set wireless.@wifi-device[1].disabled=0; uci commit wireless; wifi
+  38 uci set wireless.@wifi-device[1].disabled=1; uci commit wireless; wifi
+  39 wifi
+  40 easycwmp get value Device.WiFi.
+  41 uci set wireless.@wifi-device[$1].disabled=1
+  42 uci commit wireless
+  43 wifi
+  44 uci get wireless.
+  45 uci get wireless
+  46 uci get 
+  47 uci get wireless.@wifi-device[$1].disabled
+  48 uci show wireless.
+  49 uci show wireless
+  50 ubus
+  51 ubus list
+  52 ubus list network 
+  53 ubus call 
+  54 ubus call network 
+  55 ubus call network.
+  56 ubus call networ
+  57 ubus call 
+  58 ubus list
+  59 ubus call network.wireless
+  60 ubus call network.wireless. 
+  61 ubus get  network.wireless. 
+  62 ubus show
+  63 uci show wireless.
+  64 uci show wireless
+  65 uci get wireless.@wifi-iface[0].network
+  66 uci get wireless.@wifi-iface[0]
+  67 uci get wireless.@wifi-iface[1]
+  68 uci get wireless.@wifi-iface[1].device
+  69 uci get wireless.@wifi-iface[0].device
+  70 easycwmp get value Device.WiFi.
+  71 uci get wireless.@wifi-iface[0].devic
+  72 uci show wireless
+  73 uci get wireless.@wifi-iface[0].network
+  74 ubus 
+  75 ;m;lm
+  76 ubus 
+  77 ubus show
+  78 ubus list
+  79 ubus call router wl 
+  80 ubus -v list
+  81 ubus call network.wireless status
+  82 cat /etc/config/network 
+  83 cat /etc/config/wireless 
+  84 history
+

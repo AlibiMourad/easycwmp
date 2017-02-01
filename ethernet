@@ -1,0 +1,132 @@
+#!/bin/sh
+
+
+#############################
+#   Entry point functuons   #
+#############################
+
+	prefix_list="$prefix_list $DMROOT.Ethernet."
+	entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_Ethernet"
+	entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_Ethernet"
+	
+entry_execute_method_root_Ethernet() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.Ethernet."|"$DMROOT.Ethernet.Interface"*)
+		common_execute_method_obj "$DMROOT.Ethernet." "0"
+		common_execute_method_obj "$DMROOT.Ethernet.Interface" "0" 
+		common_execute_method_obj "$DMROOT.Ethernet.Interface" "0" "" "" "Ethernet_device_browse_interface $1"
+
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+sub_entry_Ethernet_Interface(){
+	local j="$2"
+	local n="$3"
+	local inface=`cat /etc/config/network | grep config | head -$j | tail -1 | cut -d " " -f 3 | tr -d "'"`
+	common_execute_method_obj "$DMROOT.Ethernet.Interface.$j." "0"
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.Enable" "1" """Interface_Ethernet_set_Enable sqm.$inface.enabled" "xsd:boolean"
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.Status" "0" "Interface_Ethernet_get_Status sqm.$inface.enabled" "1" "xsd:string­"
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.Name" "0" "Interface_Ethernet_get_name $j" "1" "xsd:string­"
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.MACAddress " "0" "Interface_Ethernet_get_MACAddress $j" "1" "xsd:string­"
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.MaxBitRate " "0" "Interface_Ethernet_get_MaxBitRate $j" "1" "xsd:int­"	
+	common_execute_method_param  "$DMROOT.Ethernet.Interface.$j.DuplexMode " "1" "Interface_Ethernet_get_DuplexMode $j" "Interface_Ethernet_set_DuplexMode $j" "xsd:string"	
+}
+
+#######################################
+#     Data model browse instances     #
+#######################################
+
+Ethernet_device_browse_interface(){
+	local n=`Ethernet_Process_get_max_Interface`
+	local j=1
+	while test $j != $n 
+	do
+		sub_entry_Ethernet_Interface  "$1" "$j" "$n"
+		j=$(($j+1))
+	done
+}
+
+#######################################
+#   Data model parameters functions   #
+#######################################
+
+
+#############################
+# get nomber of Ethernet    #
+#############################
+
+Ethernet_Process_get_max_Interface(){
+	local n=`ifconfig | cut -d " " -f 1| grep eth | grep -v '\.' |wc -l`
+	echo "$(($n+1))"
+}
+
+#############################
+#    set ethernet enable    #
+#############################
+
+Interface_Ethernet_set_Enable(){
+	local cfg="$1"
+	local val="$2"	
+	common_set_bool "$cfg" "$val" "0" "1"
+	return 0
+}
+
+#############################
+#  get ethernet Status      #
+#############################
+
+Interface_Ethernet_get_Status() {
+	local cfg="$1"
+	local val=`$UCI_GET $cfg 2> /dev/null`
+	[ "$val" = "1" ] && echo "0" || echo "1"
+}
+
+#############################
+#  get Name of Ethernet     #
+#############################
+
+Interface_Ethernet_get_name(){
+	local name=`ifconfig | cut -d " " -f 1| grep eth | grep -v '\.' | head -$1 | tail -1`
+	echo "$name"
+}
+
+#############################
+# get MAC address Ethernet  #
+#############################
+
+Interface_Ethernet_get_MACAddress(){
+	local MAC_add=`ifconfig | grep HWaddr | head -$1 | tail -1`
+	echo ${MAC_add#*"HWaddr"}
+}
+
+#############################
+# get Max Bit Rate Ethernet #
+#############################
+
+Interface_Ethernet_get_MaxBitRate(){
+	local eth=`Interface_Ethernet_get_name $1`
+	local bit="`dmesg |grep "$eth" | grep "Link is Up"`" 
+	if [$bit -eq ""] ; then
+		bit="-1"
+	fi
+	echo ${bit#*"Link is Up - "} | cut -d "/" -f 1
+}
+
+#############################
+# get DuplexMode Ethernet   #
+#############################
+
+Interface_Ethernet_get_DuplexMode(){
+	local eth=`Interface_Ethernet_get_name $1`
+	dmesg |grep "$eth" | grep "Link is Up" | tail -1 | cut -d"/" -f 2 | cut -d "-" -f 1
+}
+
+#############################
+# set DuplexMode            #
+#############################
+
+Interface_Ethernet_set_DuplexMode(){
+	return 0
+}
